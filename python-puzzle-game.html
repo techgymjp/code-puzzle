@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python構文パズル</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .progress {
+            background: #e0e0e0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .question-area {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .question-title {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .question-desc {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .answer-area {
+            background: white;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            min-height: 80px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .answer-area.correct {
+            border-color: #4caf50;
+            background: #e8f5e9;
+        }
+
+        .answer-area.incorrect {
+            border-color: #f44336;
+            background: #ffebee;
+        }
+
+        .words-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .word {
+            background: #667eea;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .word:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .word.placed {
+            background: #5e72d4;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .check-btn {
+            background: #4caf50;
+            color: white;
+        }
+
+        .check-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .reset-btn {
+            background: #ff9800;
+            color: white;
+        }
+
+        .reset-btn:hover {
+            background: #fb8c00;
+            transform: translateY(-2px);
+        }
+
+        .next-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .next-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .result {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .result.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .result.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .completion {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .completion h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+
+        .completion p {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐍 Python構文パズル</h1>
+            <p>単語を並べ替えて正しいPythonコードを完成させよう！</p>
+        </div>
+
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div id="gameArea"></div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                title: "変数の代入",
+                description: "変数nameに「太郎」という文字列を代入するコードを作成してください。",
+                words: ["name", "=", '"太郎"'],
+                answer: ["name", "=", '"太郎"']
+            },
+            {
+                title: "条件分岐 (if文)",
+                description: "変数xが10より大きいかどうかを判定するif文を作成してください。",
+                words: ["if", "x", ">", "10", ":"],
+                answer: ["if", "x", ">", "10", ":"]
+            },
+            {
+                title: "リストの作成",
+                description: "1, 2, 3という数値を含むリストを作成してください。",
+                words: ["[", "1", ",", "2", ",", "3", "]"],
+                answer: ["[", "1", ",", "2", ",", "3", "]"]
+            },
+            {
+                title: "for文",
+                description: "0から4までの数値をループするfor文を作成してください。",
+                words: ["for", "i", "in", "range", "(", "5", ")", ":"],
+                answer: ["for", "i", "in", "range", "(", "5", ")", ":"]
+            },
+            {
+                title: "関数の定義",
+                description: "引数を持たないhello関数を定義してください。",
+                words: ["def", "hello", "(", ")", ":"],
+                answer: ["def", "hello", "(", ")", ":"]
+            },
+            {
+                title: "print文",
+                description: "「Hello, World!」を出力するprint文を作成してください。",
+                words: ["print", "(", '"Hello, World!"', ")"],
+                answer: ["print", "(", '"Hello, World!"', ")"]
+            }
+        ];
+
+        let currentQuestion = 0;
+        let userAnswer = [];
+        let availableWords = [];
+
+        function shuffle(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function updateProgress() {
+            const progress = (currentQuestion / questions.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function renderQuestion() {
+            const question = questions[currentQuestion];
+            availableWords = shuffle([...question.words]);
+            userAnswer = [];
+
+            const gameArea = document.getElementById('gameArea');
+            gameArea.innerHTML = `
+                <div class="question-area">
+                    <div class="question-title">問題 ${currentQuestion + 1}/${questions.length}: ${question.title}</div>
+                    <div class="question-desc">${question.description}</div>
+                </div>
+
+                <div class="answer-area" id="answerArea">
+                    <span style="color: #999;">ここに単語を配置してください</span>
+                </div>
+
+                <div class="words-area" id="wordsArea"></div>
+
+                <div class="buttons">
+                    <button class="reset-btn" onclick="resetAnswer()">リセット</button>
+                    <button class="check-btn" onclick="checkAnswer()">答え合わせ</button>
+                </div>
+            `;
+
+            renderWords();
+            updateProgress();
+        }
+
+        function renderWords() {
+            const wordsArea = document.getElementById('wordsArea');
+            wordsArea.innerHTML = '';
+
+            availableWords.forEach((word, index) => {
+                const wordEl = document.createElement('div');
+                wordEl.className = 'word';
+                wordEl.textContent = word;
+                wordEl.onclick = () => selectWord(index);
+                wordsArea.appendChild(wordEl);
+            });
+        }
+
+        function renderAnswer() {
+            const answerArea = document.getElementById('answerArea');
+            answerArea.innerHTML = '';
+
+            if (userAnswer.length === 0) {
+                answerArea.innerHTML = '<span style="color: #999;">ここに単語を配置してください</span>';
+                return;
+            }
+
+            userAnswer.forEach((word, index) => {
+                const wordEl = document.createElement('div');
+                wordEl.className = 'word placed';
+                wordEl.textContent = word;
+                wordEl.onclick = () => removeWord(index);
+                answerArea.appendChild(wordEl);
+            });
+        }
+
+        function selectWord(index) {
+            const word = availableWords[index];
+            userAnswer.push(word);
+            availableWords.splice(index, 1);
+
+            renderWords();
+            renderAnswer();
+        }
+
+        function removeWord(index) {
+            const word = userAnswer[index];
+            availableWords.push(word);
+            userAnswer.splice(index, 1);
+
+            renderWords();
+            renderAnswer();
+        }
+
+        function resetAnswer() {
+            const question = questions[currentQuestion];
+            availableWords = shuffle([...question.words]);
+            userAnswer = [];
+
+            renderWords();
+            renderAnswer();
+
+            const answerArea = document.getElementById('answerArea');
+            answerArea.classList.remove('correct', 'incorrect');
+        }
+
+        function checkAnswer() {
+            const question = questions[currentQuestion];
+            const isCorrect = JSON.stringify(userAnswer) === JSON.stringify(question.answer);
+
+            const answerArea = document.getElementById('answerArea');
+            const gameArea = document.getElementById('gameArea');
+
+            if (isCorrect) {
+                answerArea.classList.add('correct');
+                answerArea.classList.remove('incorrect');
+
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '🎉 正解です！素晴らしい！';
+                gameArea.insertBefore(resultDiv, gameArea.querySelector('.buttons'));
+
+                setTimeout(() => {
+                    if (currentQuestion < questions.length - 1) {
+                        const buttons = gameArea.querySelector('.buttons');
+                        buttons.innerHTML = '<button class="next-btn" onclick="nextQuestion()">次の問題へ</button>';
+                    } else {
+                        showCompletion();
+                    }
+                }, 500);
+            } else {
+                answerArea.classList.add('incorrect');
+                answerArea.classList.remove('correct');
+
+                const existingResult = gameArea.querySelector('.result');
+                if (existingResult) {
+                    existingResult.remove();
+                }
+
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ もう一度考えてみましょう！';
+                gameArea.insertBefore(resultDiv, gameArea.querySelector('.buttons'));
+
+                setTimeout(() => {
+                    resultDiv.remove();
+                }, 2000);
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            renderQuestion();
+        }
+
+        function showCompletion() {
+            const gameArea = document.getElementById('gameArea');
+            gameArea.innerHTML = `
+                <div class="completion">
+                    <h2>🎊 おめでとうございます！</h2>
+                    <p>全ての問題をクリアしました！<br>Pythonの基礎構文をマスターしましたね！</p>
+                    <button class="next-btn" onclick="restart()">最初から挑戦する</button>
+                </div>
+            `;
+        }
+
+        function restart() {
+            currentQuestion = 0;
+            renderQuestion();
+        }
+
+        // ゲーム開始
+        renderQuestion();
+    </script>
+</body>
+</html>
