@@ -156,12 +156,17 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .check-btn {
             background: linear-gradient(135deg, #ff6b9d 0%, #ff85a8 100%);
             color: white;
         }
 
-        .check-btn:hover {
+        .check-btn:hover:not(:disabled) {
             background: linear-gradient(135deg, #ff5588 0%, #ff6b9d 100%);
             transform: translateY(-2px);
             box-shadow: 0 6px 15px rgba(255, 107, 157, 0.4);
@@ -172,7 +177,7 @@
             color: white;
         }
 
-        .hint-btn:hover {
+        .hint-btn:hover:not(:disabled) {
             background: linear-gradient(135deg, #ff92b8 0%, #ffa6c9 100%);
             transform: translateY(-2px);
             box-shadow: 0 6px 15px rgba(255, 166, 201, 0.4);
@@ -183,7 +188,7 @@
             color: white;
         }
 
-        .reset-btn:hover {
+        .reset-btn:hover:not(:disabled) {
             background: linear-gradient(135deg, #b05870 0%, #c06c84 100%);
             transform: translateY(-2px);
             box-shadow: 0 6px 15px rgba(192, 108, 132, 0.4);
@@ -214,14 +219,12 @@
             background: linear-gradient(135deg, #ffd4e5 0%, #ffe8f0 100%);
             color: #c06c84;
             border: 2px solid #ff6b9d;
-            display: block;
         }
 
         .feedback.incorrect {
             background: linear-gradient(135deg, #ffe0ec 0%, #fff0f5 100%);
             color: #c06c84;
             border: 2px solid #ffa6c9;
-            display: block;
         }
 
         .hint {
@@ -345,21 +348,18 @@
         let currentQuestionIndex = 0;
         let correctCount = 0;
         let draggedElement = null;
-    // フラグ: 現在の問題で既に正解処理が行われたか
-    let questionAnsweredCorrectly = false;
+        let questionAnsweredCorrectly = false;
 
         function setupDragAndDrop() {
             const answerArea = document.getElementById('answer-area');
             const wordBank = document.getElementById('word-bank');
 
-            // 解答エリアのイベント
             answerArea.addEventListener('dragover', handleDragOver);
             answerArea.addEventListener('dragleave', handleDragLeave);
             answerArea.addEventListener('drop', function(e) {
                 handleDrop(e, answerArea);
             });
 
-            // 単語バンクのイベント
             wordBank.addEventListener('dragover', handleDragOver);
             wordBank.addEventListener('dragleave', handleDragLeave);
             wordBank.addEventListener('drop', function(e) {
@@ -383,8 +383,8 @@
             
             if (draggedElement) {
                 const answerArea = document.getElementById('answer-area');
-                const placeholder = answerArea.querySelector('div[style*="color: #ffa6c9"]');
-                if (placeholder) {
+                const placeholder = answerArea.querySelector('div[style*="color"]');
+                if (placeholder && !placeholder.classList.contains('word-block')) {
                     placeholder.remove();
                 }
                 targetArea.appendChild(draggedElement);
@@ -409,10 +409,10 @@
                 wordBank.appendChild(wordBlock);
             });
             
-            document.getElementById('answer-area').innerHTML = '<div style="color: #ffa6c9;">ここに単語をドラッグしてください</div>';
+            document.getElementById('answer-area').innerHTML = '<div style="color: #999;">ここに単語をドラッグしてください</div>';
             document.getElementById('feedback').style.display = 'none';
             document.getElementById('hint').style.display = 'none';
-            // 新しい問題開始時はフラグをリセットし、ボタンを再有効化
+            
             questionAnsweredCorrectly = false;
             document.getElementById('check-btn').disabled = false;
             document.getElementById('hint-btn').disabled = false;
@@ -436,14 +436,13 @@
                 this.classList.remove('dragging');
             });
             
-            // クリックでも移動できるようにする
             block.addEventListener('click', function() {
                 const answerArea = document.getElementById('answer-area');
                 const wordBank = document.getElementById('word-bank');
                 
                 if (this.parentElement === wordBank) {
-                    const placeholder = answerArea.querySelector('div[style*="color: #ffa6c9"]');
-                    if (placeholder) {
+                    const placeholder = answerArea.querySelector('div[style*="color"]');
+                    if (placeholder && !placeholder.classList.contains('word-block')) {
                         placeholder.remove();
                     }
                     answerArea.appendChild(this);
@@ -456,15 +455,15 @@
         }
 
         document.getElementById('check-btn').addEventListener('click', function() {
-            // 正解処理中や既に正解済みの場合は無視
             if (questionAnsweredCorrectly) return;
 
             const answerArea = document.getElementById('answer-area');
             const blocks = Array.from(answerArea.querySelectorAll('.word-block'));
+            const feedback = document.getElementById('feedback');
             
             if (blocks.length === 0) {
-                const feedback = document.getElementById('feedback');
                 feedback.className = 'feedback incorrect';
+                feedback.style.display = 'block';
                 feedback.textContent = '単語を配置してください';
                 return;
             }
@@ -472,18 +471,16 @@
             const userAnswer = blocks.map(block => block.textContent);
             const correctAnswer = questions[currentQuestionIndex].answer;
             
-            const feedback = document.getElementById('feedback');
-            
             if (JSON.stringify(userAnswer) === JSON.stringify(correctAnswer)) {
                 feedback.className = 'feedback correct';
+                feedback.style.display = 'block';
                 feedback.textContent = '✓ 正解です！素晴らしい！';
-                // フラグを立てて多重カウントを防止、ボタンを無効化
+                
                 questionAnsweredCorrectly = true;
                 document.getElementById('check-btn').disabled = true;
                 document.getElementById('hint-btn').disabled = true;
                 document.getElementById('reset-btn').disabled = true;
 
-                // カウントはここで一度だけ増やし、表示を更新
                 correctCount++;
                 document.getElementById('correct-count').textContent = correctCount;
 
@@ -497,6 +494,7 @@
                 }, 2000);
             } else {
                 feedback.className = 'feedback incorrect';
+                feedback.style.display = 'block';
                 feedback.textContent = '✗ 惜しい！もう一度考えてみましょう';
             }
         });
@@ -516,11 +514,6 @@
             document.getElementById('completion').style.display = 'block';
             document.getElementById('final-score').textContent = correctCount;
             document.getElementById('final-total').textContent = questions.length;
-            // 完了時にもフラグリセットとボタン有効化（UI 状態をクリア）
-            questionAnsweredCorrectly = false;
-            document.getElementById('check-btn').disabled = false;
-            document.getElementById('hint-btn').disabled = false;
-            document.getElementById('reset-btn').disabled = false;
         }
 
         setupDragAndDrop();
