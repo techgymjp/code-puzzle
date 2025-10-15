@@ -345,6 +345,8 @@
         let currentQuestionIndex = 0;
         let correctCount = 0;
         let draggedElement = null;
+    // フラグ: 現在の問題で既に正解処理が行われたか
+    let questionAnsweredCorrectly = false;
 
         function setupDragAndDrop() {
             const answerArea = document.getElementById('answer-area');
@@ -410,6 +412,11 @@
             document.getElementById('answer-area').innerHTML = '<div style="color: #ffa6c9;">ここに単語をドラッグしてください</div>';
             document.getElementById('feedback').style.display = 'none';
             document.getElementById('hint').style.display = 'none';
+            // 新しい問題開始時はフラグをリセットし、ボタンを再有効化
+            questionAnsweredCorrectly = false;
+            document.getElementById('check-btn').disabled = false;
+            document.getElementById('hint-btn').disabled = false;
+            document.getElementById('reset-btn').disabled = false;
         }
 
         function createWordBlock(text) {
@@ -449,6 +456,9 @@
         }
 
         document.getElementById('check-btn').addEventListener('click', function() {
+            // 正解処理中や既に正解済みの場合は無視
+            if (questionAnsweredCorrectly) return;
+
             const answerArea = document.getElementById('answer-area');
             const blocks = Array.from(answerArea.querySelectorAll('.word-block'));
             
@@ -467,9 +477,16 @@
             if (JSON.stringify(userAnswer) === JSON.stringify(correctAnswer)) {
                 feedback.className = 'feedback correct';
                 feedback.textContent = '✓ 正解です！素晴らしい！';
+                // フラグを立てて多重カウントを防止、ボタンを無効化
+                questionAnsweredCorrectly = true;
+                document.getElementById('check-btn').disabled = true;
+                document.getElementById('hint-btn').disabled = true;
+                document.getElementById('reset-btn').disabled = true;
+
+                // カウントはここで一度だけ増やし、表示を更新
                 correctCount++;
                 document.getElementById('correct-count').textContent = correctCount;
-                
+
                 setTimeout(() => {
                     if (currentQuestionIndex < questions.length - 1) {
                         currentQuestionIndex++;
@@ -499,6 +516,11 @@
             document.getElementById('completion').style.display = 'block';
             document.getElementById('final-score').textContent = correctCount;
             document.getElementById('final-total').textContent = questions.length;
+            // 完了時にもフラグリセットとボタン有効化（UI 状態をクリア）
+            questionAnsweredCorrectly = false;
+            document.getElementById('check-btn').disabled = false;
+            document.getElementById('hint-btn').disabled = false;
+            document.getElementById('reset-btn').disabled = false;
         }
 
         setupDragAndDrop();
